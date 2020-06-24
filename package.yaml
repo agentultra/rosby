@@ -28,6 +28,7 @@ library:
   dependencies:
   - mtl
   - monad-logger
+  - text
 
 executables:
   rosby-exe:

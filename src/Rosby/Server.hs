@@ -8,6 +8,7 @@ import Control.Monad
 import Control.Monad.Logger
 import Control.Monad.Reader
 import Control.Monad.Trans
+import Data.Text
 import System.IO
 
 data Context
@@ -29,8 +30,8 @@ newtype Server a = Server { runServer :: ReaderT Context (LoggingT IO) a }
 
 server :: Server ()
 server = do
-  (Context host post) <- ask
-  $(logDebug) "Rosby, reporting for duty"
+  (Context host port) <- ask
+  $(logDebug) ("Rosby, reporting for duty " <> (pack host) <> (pack . show $ port))
   liftIO $ hFlush stdout
   liftIO $ loop
   where
