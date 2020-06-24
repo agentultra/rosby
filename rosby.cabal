@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 383200af33b3eae0cbdc5482596070c73800fbb83a4e1e2bccc89bfa9423d44d
+-- hash: a0e47560b9487fe1ce1c9af06a3b618e3a1a2cab617aae1d264e2de762803c24
 
 name:           rosby
 version:        0.1.0.0
@@ -36,6 +36,7 @@ library
   build-depends:
       Cabal
     , base >=4.7 && <5
+    , conferer
     , monad-logger
     , mtl
     , text

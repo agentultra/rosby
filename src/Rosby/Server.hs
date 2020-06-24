@@ -1,22 +1,42 @@
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
 
 module Rosby.Server where
 
+import Conferer
 import Control.Monad
 import Control.Monad.Logger
 import Control.Monad.Reader
 import Control.Monad.Trans
-import Data.Text
+import Data.Text (Text())
+import qualified Data.Text as T
 import System.IO
+import GHC.Generics (Generic)
+
+data RosbyConfig
+  = RosbyConfig
+  { _contextHost   :: Text
+  , _contextPort   :: Int
+  }
+  deriving (Generic)
+
+instance FromConfig RosbyConfig
+
+
+instance DefaultConfig RosbyConfig where
+  configDef =
+    RosbyConfig
+    { _contextHost = "localhost"
+    , _contextPort = 1993
+    }
 
 data Context
   = Context
-  { _contextHost :: String
-  , _contextPort :: Int
+  { _contextConfig :: Config
   }
-  deriving (Eq, Show)
 
 newtype Server a = Server { runServer :: ReaderT Context (LoggingT IO) a }
   deriving
@@ -30,8 +50,10 @@ newtype Server a = Server { runServer :: ReaderT Context (LoggingT IO) a }
 
 server :: Server ()
 server = do
-  (Context host port) <- ask
-  $(logDebug) ("Rosby, reporting for duty " <> (pack host) <> (pack . show $ port))
+  (Context configs) <- ask
+  $(logDebug) "Rosby, reporting for duty"
+  rosbyConfigs :: RosbyConfig <- liftIO $ getFromRootConfig configs
+  $(logDebug) ("Host " <> (_contextHost rosbyConfigs))
   liftIO $ hFlush stdout
   liftIO $ loop
   where
@@ -41,5 +63,6 @@ server = do
 
 start :: IO ()
 start = do
-  let ctx = Context "localhost" 8989
+  config <- defaultConfig "rosby"
+  let ctx = Context config
   runStderrLoggingT $ runReaderT (runServer server) ctx
