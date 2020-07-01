@@ -31,7 +31,7 @@ server = do
   (Context configs) <- ask
   $(logDebug) "Rosby, reporting for duty"
   rosbyConfigs :: RosbyConfig <- liftIO $ getFromRootConfig configs
-  $(logDebug) ("Host " <> (_contextHost rosbyConfigs))
+  $(logDebug) ("Host " <> (serverHost rosbyConfigs))
   liftIO $ hFlush stdout
   -- TODO (james): replace this with an actual loop
   liftIO $ loop

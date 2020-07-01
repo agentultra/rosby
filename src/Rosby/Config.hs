@@ -4,10 +4,11 @@ import Conferer
 import Data.Text (Text())
 import GHC.Generics (Generic)
 
+-- We break from our record naming convention because of Conferer
 data RosbyConfig
   = RosbyConfig
-  { _contextHost   :: Text
-  , _contextPort   :: Int
+  { serverHost :: Text
+  , serverPort :: Int
   }
   deriving (Generic)
 
@@ -17,6 +18,6 @@ instance FromConfig RosbyConfig
 instance DefaultConfig RosbyConfig where
   configDef =
     RosbyConfig
-    { _contextHost = "localhost"
-    , _contextPort = 1993
+    { serverHost = "localhost"
+    , serverPort = 1993
     }
