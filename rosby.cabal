@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 9830525655afa3f9e107ecf6e23baa908512ac27c72637f8a3775caae34354d8
+-- hash: 3b0e9124c177b385985189eaa14f37555b5022c04ca8b2e70f61e96e922d1062
 
 name:           rosby
 version:        0.1.0.0
@@ -40,6 +40,7 @@ library
     , conferer
     , monad-logger
     , mtl
+    , network
     , text
   default-language: Haskell2010
 

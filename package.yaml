@@ -36,6 +36,7 @@ library:
   - conferer
   - mtl
   - monad-logger
+  - network
   - text
 
 executables:
