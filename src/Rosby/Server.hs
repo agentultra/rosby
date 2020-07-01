@@ -14,24 +14,8 @@ import Control.Monad.Trans
 import Data.Text (Text())
 import qualified Data.Text as T
 import System.IO
-import GHC.Generics (Generic)
 
-data RosbyConfig
-  = RosbyConfig
-  { _contextHost   :: Text
-  , _contextPort   :: Int
-  }
-  deriving (Generic)
-
-instance FromConfig RosbyConfig
-
-
-instance DefaultConfig RosbyConfig where
-  configDef =
-    RosbyConfig
-    { _contextHost = "localhost"
-    , _contextPort = 1993
-    }
+import Rosby.Config
 
 data Context
   = Context
@@ -55,6 +39,7 @@ server = do
   rosbyConfigs :: RosbyConfig <- liftIO $ getFromRootConfig configs
   $(logDebug) ("Host " <> (_contextHost rosbyConfigs))
   liftIO $ hFlush stdout
+  -- TODO (james): replace this with an actual loop
   liftIO $ loop
   where
     loop = do
