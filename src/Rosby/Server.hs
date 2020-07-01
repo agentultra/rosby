@@ -1,6 +1,7 @@
 module Rosby.Server where
 
 import Conferer
+import Control.Concurrent
 import Control.Exception
 import Control.Monad
 import Control.Monad.Logger
@@ -32,14 +33,7 @@ newtype Server a = Server { runServer :: ReaderT Context (LoggingT IO) a }
 server :: Socket -> Server ()
 server socket = do
   (Context configs) <- ask
-  $(logDebug) "Rosby, reporting for duty"
-  liftIO $ hFlush stdout
-  -- TODO (james): replace this with an actual loop
-  liftIO $ loop
-  where
-    loop = do
-      cmd <- getLine
-      unless (cmd == "quit") $ loop
+  $(logDebug) "We has connection"
 
 type Port = String
 
@@ -53,15 +47,22 @@ resolve host port = do
   head <$> getAddrInfo (Just hints) (Just host) (Just port)
 
 start :: IO ()
-start = do
-  config <- defaultConfig "rosby"
+start = withSocketsDo $ runStdoutLoggingT $ do
+  $(logDebug) "Rosby, reporting for duty!"
+  config <- liftIO $ defaultConfig "rosby"
+  logChan <- liftIO $ newChan
   rosbyConfigs :: RosbyConfig <- liftIO $ getFromRootConfig config
   let ctx = Context config
   let h = serverHost rosbyConfigs
   let p = serverPort rosbyConfigs
-  addr <- resolve (T.unpack h) (show p)
-  bracket (open addr) close $ \s -> do
-    runStderrLoggingT $ runReaderT (runServer $ server s) ctx
+  addr <- liftIO $ resolve (T.unpack h) (show p)
+  liftIO $ bracket (open addr) close (\s -> do
+                                loop s (\s' -> runChanLoggingT logChan $ runReaderT (runServer $ server s') ctx))
+  unChanLoggingT logChan
+  where
+    loop s handler = forever $ do
+      (conn, _peer) <- accept s
+      void $ forkFinally (handler conn) (const $ gracefulClose conn 5000)
 
 open :: AddrInfo -> IO Socket
 open addr = do
