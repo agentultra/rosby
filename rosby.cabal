@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: a0e47560b9487fe1ce1c9af06a3b618e3a1a2cab617aae1d264e2de762803c24
+-- hash: 9830525655afa3f9e107ecf6e23baa908512ac27c72637f8a3775caae34354d8
 
 name:           rosby
 version:        0.1.0.0
@@ -27,12 +27,13 @@ source-repository head
 
 library
   exposed-modules:
-      Lib
+      Rosby.Config
       Rosby.Server
   other-modules:
       Paths_rosby
   hs-source-dirs:
       src
+  default-extensions: DeriveGeneric ScopedTypeVariables OverloadedStrings GeneralizedNewtypeDeriving TemplateHaskell
   build-depends:
       Cabal
     , base >=4.7 && <5
@@ -48,6 +49,7 @@ executable rosby-exe
       Paths_rosby
   hs-source-dirs:
       app
+  default-extensions: DeriveGeneric ScopedTypeVariables OverloadedStrings GeneralizedNewtypeDeriving TemplateHaskell
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       Cabal
@@ -62,6 +64,7 @@ test-suite rosby-test
       Paths_rosby
   hs-source-dirs:
       test
+  default-extensions: DeriveGeneric ScopedTypeVariables OverloadedStrings GeneralizedNewtypeDeriving TemplateHaskell
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       Cabal
