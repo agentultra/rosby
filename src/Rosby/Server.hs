@@ -7,6 +7,7 @@ import Control.Monad
 import Control.Monad.Logger
 import Control.Monad.Reader
 import Control.Monad.Trans
+import qualified Data.ByteString as B
 import Data.Text (Text())
 import qualified Data.Text as T
 import Network.Socket
@@ -34,6 +35,10 @@ handler :: Socket -> Handler ()
 handler socket = do
   (Context configs) <- ask
   $(logDebug) "We has connection"
+  input <- liftIO $ S.recv socket 1024
+  unless (B.null input) $ do
+    liftIO $ S.sendAll socket input
+    handler socket
 
 type Port = String
 
@@ -61,7 +66,7 @@ start = withSocketsDo $ runStdoutLoggingT $ do
     loop logChan ctx s = forever $ do
       (conn, _peer) <- accept s
       void $ forkFinally (doHandle conn logChan ctx) (const $ gracefulClose conn 5000)
-    doHandle conn logChan ctx = runChanLoggingT logChan $ (runReaderT (runHandler $ handler conn) ctx)
+    doHandle conn logChan = runChanLoggingT logChan . runReaderT (runHandler $ handler conn)
 
 open :: AddrInfo -> IO Socket
 open addr = do

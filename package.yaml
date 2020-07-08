@@ -33,6 +33,7 @@ default-extensions:
 library:
   source-dirs: src
   dependencies:
+  - bytestring
   - conferer
   - mtl
   - monad-logger
