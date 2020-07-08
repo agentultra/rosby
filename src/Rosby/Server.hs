@@ -2,7 +2,7 @@ module Rosby.Server where
 
 import Conferer
 import Control.Concurrent
-import Control.Exception
+import Control.Exception hiding (Handler)
 import Control.Monad
 import Control.Monad.Logger
 import Control.Monad.Reader
@@ -20,7 +20,7 @@ data Context
   { _contextConfig :: Config
   }
 
-newtype Server a = Server { runServer :: ReaderT Context (LoggingT IO) a }
+newtype Handler a = Handler { runHandler :: ReaderT Context (LoggingT IO) a }
   deriving
     ( Applicative
     , Functor
@@ -30,8 +30,8 @@ newtype Server a = Server { runServer :: ReaderT Context (LoggingT IO) a }
     , MonadIO
     )
 
-server :: Socket -> Server ()
-server socket = do
+handler :: Socket -> Handler ()
+handler socket = do
   (Context configs) <- ask
   $(logDebug) "We has connection"
 
@@ -56,13 +56,12 @@ start = withSocketsDo $ runStdoutLoggingT $ do
   let h = serverHost rosbyConfigs
   let p = serverPort rosbyConfigs
   addr <- liftIO $ resolve (T.unpack h) (show p)
-  liftIO $ bracket (open addr) close (\s -> do
-                                loop s (\s' -> runChanLoggingT logChan $ runReaderT (runServer $ server s') ctx))
-  unChanLoggingT logChan
+  liftIO $ bracket (open addr) close (loop logChan ctx)
   where
-    loop s handler = forever $ do
+    loop logChan ctx s = forever $ do
       (conn, _peer) <- accept s
-      void $ forkFinally (handler conn) (const $ gracefulClose conn 5000)
+      void $ forkFinally (doHandle conn logChan ctx) (const $ gracefulClose conn 5000)
+    doHandle conn logChan ctx = runChanLoggingT logChan $ (runReaderT (runHandler $ handler conn) ctx)
 
 open :: AddrInfo -> IO Socket
 open addr = do
