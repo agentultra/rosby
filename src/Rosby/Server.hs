@@ -17,7 +17,7 @@ import System.IO
 
 import Rosby.Config
 
-data Context
+newtype Context
   = Context
   { _contextConfig :: Config
   }
@@ -76,7 +76,7 @@ start :: IO ()
 start = withSocketsDo $ runStdoutLoggingT $ do
   $(logDebug) "Rosby, reporting for duty!"
   config <- liftIO $ defaultConfig "rosby"
-  logChan <- liftIO $ newChan
+  logChan <- liftIO newChan
   rosbyConfigs :: RosbyConfig <- liftIO $ getFromRootConfig config
   let ctx = Context config
   let h = serverHost rosbyConfigs
@@ -88,7 +88,7 @@ open :: AddrInfo -> IO Socket
 open addr = do
   sock <- socket (addrFamily addr) (addrSocketType addr) (addrProtocol addr)
   setSocketOption sock ReuseAddr 1
-  withFdSocket sock $ setCloseOnExecIfNeeded
+  withFdSocket sock setCloseOnExecIfNeeded
   bind sock $ addrAddress addr
   listen sock 1024
   return sock
