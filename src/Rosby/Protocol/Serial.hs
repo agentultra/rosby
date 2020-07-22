@@ -1,4 +1,4 @@
-module Rosby.Protocol.Parser where
+module Rosby.Protocol.Serial where
 
 import Control.Applicative (Alternative((<|>)))
 import Data.ByteString (ByteString())
