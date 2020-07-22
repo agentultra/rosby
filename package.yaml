@@ -33,12 +33,14 @@ default-extensions:
 library:
   source-dirs: src
   dependencies:
+  - attoparsec
   - bytestring
   - conferer
   - mtl
   - monad-logger
   - network
   - text
+  - word8
 
 executables:
   rosby-exe:

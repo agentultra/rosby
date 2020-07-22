@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: f4d31b8e8866ef947b7797504ded9c1a166452a645529d0f9be7717720e06e4f
+-- hash: f62ab640f25ac74c4c23cfba7b24efd2555fc3045656a9e2e27d6a428ea95cec
 
 name:           rosby
 version:        0.1.0.0
@@ -28,6 +28,7 @@ source-repository head
 library
   exposed-modules:
       Rosby.Config
+      Rosby.Protocol.Parser
       Rosby.Server
   other-modules:
       Paths_rosby
@@ -36,6 +37,7 @@ library
   default-extensions: DeriveGeneric ScopedTypeVariables OverloadedStrings GeneralizedNewtypeDeriving TemplateHaskell
   build-depends:
       Cabal
+    , attoparsec
     , base >=4.7 && <5
     , bytestring
     , conferer
@@ -43,6 +45,7 @@ library
     , mtl
     , network
     , text
+    , word8
   default-language: Haskell2010
 
 executable rosby-exe
