@@ -29,6 +29,7 @@ default-extensions:
 - OverloadedStrings
 - GeneralizedNewtypeDeriving
 - TemplateHaskell
+- TypeApplications
 
 library:
   source-dirs: src
@@ -39,6 +40,7 @@ library:
   - mtl
   - monad-logger
   - network
+  - QuickCheck
   - text
   - word8
 
@@ -62,4 +64,6 @@ tests:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
+    - hspec
+    - QuickCheck
     - rosby

@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 module Rosby.Protocol.Serial where
 
 import Control.Applicative (Alternative((<|>)))
@@ -7,6 +8,7 @@ import qualified Data.ByteString.Char8 as B8
 import Data.Attoparsec.ByteString (Parser(), (<?>))
 import qualified Data.Attoparsec.ByteString as P
 import Data.Word8
+import Test.QuickCheck
 
 data Primitive
   = Str Int ByteString -- ^ Strings are indexed by their length
@@ -57,3 +59,17 @@ arrayParser = do
 
 primParser :: Parser Primitive
 primParser = arrayParser <|> strParser <|> intParser
+
+instance Arbitrary Primitive where
+  arbitrary = do
+    size <- arbitrarySizedNatural
+    oneof [ Str size . B8.pack <$> vectorOf size arbitraryASCIIChar
+          , Num <$> arbitrary @Integer
+          , Array size <$> vectorOf size arbitraryNumOrStr
+          ]
+      where
+        arbitraryNumOrStr = suchThat (arbitrary @Primitive) onlyNumOrStr
+        onlyNumOrStr = \case
+          Str _ _ -> True
+          Num _   -> True
+          _       -> False
