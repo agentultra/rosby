@@ -8,11 +8,11 @@ import Data.Attoparsec.ByteString (Parser(), (<?>))
 import qualified Data.Attoparsec.ByteString as P
 import Data.Word8
 
-data Prim
+data Primitive
   = Str Int ByteString -- ^ Strings are indexed by their length
   | Num Integer -- ^ Numbers are integers
-  | Array Int [Prim] -- ^ Arrays are indexed by their length and can
-                     -- contain Str and Int types
+  | Array Int [Primitive] -- ^ Arrays are indexed by their length and can
+                          -- contain Str and Int types
   deriving (Eq, Show)
 
 isCR = (== 13)
@@ -21,7 +21,7 @@ isLF = (== 10)
 lineSep :: Parser ()
 lineSep = P.skip isCR >> P.skip isLF <?> "lineSep"
 
-strParser :: Parser Prim
+strParser :: Parser Primitive
 strParser = do
   P.word8 _dollar
   num <- P.takeWhile isDigit
@@ -35,7 +35,7 @@ strParser = do
   where
     isDigit c = c >= 48 && c <= 57
 
-intParser :: Parser Prim
+intParser :: Parser Primitive
 intParser = do
   P.word8 _colon
   num <- P.takeWhile isDigit
@@ -44,7 +44,7 @@ intParser = do
     Just (num', _) -> pure $ Num num'
     Nothing        -> fail "Failed to parse integer"
 
-arrayParser :: Parser Prim
+arrayParser :: Parser Primitive
 arrayParser = do
   P.word8 _asterisk
   num <- P.takeWhile isDigit
@@ -55,5 +55,5 @@ arrayParser = do
       pure $ Array num' prims
     Nothing -> fail "Array length must be integer"
 
-primParser :: Parser Prim
+primParser :: Parser Primitive
 primParser = arrayParser <|> strParser <|> intParser
