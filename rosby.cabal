@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 2c71c7f6aadd1e1723c64ca8a9af7965b3b4f4888316a45d38b39a034ad75033
+-- hash: 767b7832f4ceee6efe946ecbc83c185433ea7134ef5cdb8a19b27953564e4c61
 
 name:           rosby
 version:        0.1.0.0
@@ -77,6 +77,8 @@ test-suite rosby-test
       Cabal
     , QuickCheck
     , base >=4.7 && <5
+    , bytestring
     , hspec
+    , hspec-golden
     , rosby
   default-language: Haskell2010

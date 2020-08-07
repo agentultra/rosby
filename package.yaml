@@ -64,6 +64,8 @@ tests:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
+    - bytestring
     - hspec
+    - hspec-golden
     - QuickCheck
     - rosby
