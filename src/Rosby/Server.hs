@@ -8,6 +8,7 @@ import Control.Monad.Logger
 import Control.Monad.Reader
 import Control.Monad.Trans
 import qualified Data.ByteString as B
+import qualified Data.ByteString.Char8 as B8
 import Data.Text (Text())
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
@@ -16,6 +17,8 @@ import qualified Network.Socket.ByteString as S
 import System.IO
 
 import Rosby.Config
+import Rosby.Protocol.Serial
+import Rosby.Protocol.Command
 
 newtype Context
   = Context
@@ -47,7 +50,8 @@ handler socket = do
   $(logDebug) "We has connection"
   input <- liftIO $ S.recv socket 1024
   unless (B.null input) $ do
-    liftIO $ S.sendAll socket input
+    let cmd = runParser input
+    liftIO $ S.sendAll socket $ B8.pack $ show cmd
     handler socket
 
 type LogLine = (Loc, LogSource, LogLevel, LogStr)

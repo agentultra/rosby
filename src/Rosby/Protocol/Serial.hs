@@ -60,6 +60,9 @@ arrayParser = do
 primParser :: Parser Primitive
 primParser = arrayParser <|> strParser <|> intParser
 
+runParser :: ByteString -> Either String Primitive
+runParser = P.eitherResult . P.parse primParser
+
 instance Arbitrary Primitive where
   arbitrary = do
     size <- arbitrarySizedNatural
