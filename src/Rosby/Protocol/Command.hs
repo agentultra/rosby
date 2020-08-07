@@ -13,27 +13,28 @@ data Command
   deriving (Eq, Show)
 
 fromPrim :: Primitive -> Either String Command
-fromPrim (Array _ []) = Left "Command must not be an empty array"
-fromPrim (Array _ ((Str len bytes):ps)) =
-  case bytes of
-    "SET" -> parseSet ps
-    "GET" -> parseGet ps
-    "DEL" -> parseDelete ps
-    _     -> Left "Unrecognized command"
-fromPrim (Array _ _) = Left "Unrecognized command"
-fromPrim _ = Left "Command must be in an array format"
+fromPrim prim =
+  case prim of
+    Array _ [] -> Left "Command must not be an empty array"
+    Array _ ((Str len bytes):ps) ->
+      case bytes of
+        "SET" -> parseSet ps
+        "GET" -> parseGet ps
+        "DEL" -> parseDelete ps
+        _     -> Left "Unrecognized command"
+    _ -> Left "Invalid command"
 
 parseSet :: [Primitive] -> Either String Command
-parseSet [] = Left "Way too few"
+parseSet [] = Left "Not enough arguments"
 parseSet ((Str _ y):(Str _ z):_) = Right $ Set (Key y) z
-parseSet _ = Left "Hooha"
+parseSet _ = Left "Invalid set command"
 
 parseGet :: [Primitive] -> Either String Command
-parseGet [] = Left "Way too few"
+parseGet [] = Left "Not enough arguments"
 parseGet ((Str _ y):_) = Right $ Get (Key y)
-parseGet _ = Left "Hooha"
+parseGet _ = Left "Invalid get command"
 
 parseDelete :: [Primitive] -> Either String Command
-parseDelete [] = Left "Way too few"
+parseDelete [] = Left "Not enough arguments"
 parseDelete ((Str _ y):_) = Right $ Delete (Key y)
-parseDelete _ = Left "Hooha"
+parseDelete _ = Left "Invalid delete command"
