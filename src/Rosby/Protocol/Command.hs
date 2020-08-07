@@ -15,7 +15,6 @@ data Command
 fromPrim :: Primitive -> Either String Command
 fromPrim prim =
   case prim of
-    Array _ [] -> Left "Command must not be an empty array"
     Array _ ((Str len bytes):ps) ->
       case bytes of
         "SET" -> parseSet ps
@@ -25,16 +24,13 @@ fromPrim prim =
     _ -> Left "Invalid command"
 
 parseSet :: [Primitive] -> Either String Command
-parseSet [] = Left "Not enough arguments"
 parseSet ((Str _ y):(Str _ z):_) = Right $ Set (Key y) z
 parseSet _ = Left "Invalid set command"
 
 parseGet :: [Primitive] -> Either String Command
-parseGet [] = Left "Not enough arguments"
 parseGet ((Str _ y):_) = Right $ Get (Key y)
 parseGet _ = Left "Invalid get command"
 
 parseDelete :: [Primitive] -> Either String Command
-parseDelete [] = Left "Not enough arguments"
 parseDelete ((Str _ y):_) = Right $ Delete (Key y)
 parseDelete _ = Left "Invalid delete command"
