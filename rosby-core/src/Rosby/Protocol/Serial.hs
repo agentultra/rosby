@@ -7,6 +7,7 @@ import qualified Data.ByteString as B
 import qualified Data.ByteString.Char8 as B8
 import Data.Attoparsec.ByteString (Parser(), (<?>))
 import qualified Data.Attoparsec.ByteString as P
+import Data.Foldable
 import Data.Word8
 import Test.QuickCheck
 
@@ -62,6 +63,14 @@ primParser = arrayParser <|> strParser <|> intParser
 
 runParser :: ByteString -> Either String Primitive
 runParser = P.eitherResult . P.parse primParser
+
+serialize :: Primitive -> ByteString
+serialize (Str len value) = "$" <> (B8.pack . show $ len) <> "\r\n" <> value <> "\r\n"
+serialize (Num n) = ":" <> (B8.pack . show $ n) <> "\r\n"
+serialize (Array len values) =
+  "*" <> (B8.pack . show $ len) <> "\r\n" <> (serializeValues values) <> "\r\n"
+  where
+    serializeValues = B.concat . map serialize
 
 instance Arbitrary Primitive where
   arbitrary = do
