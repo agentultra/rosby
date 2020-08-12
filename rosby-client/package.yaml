@@ -27,15 +27,4 @@ library:
   dependencies:
   - bytestring
   - rosby-core
-  - socket
-
-tests:
-  rosby-client-test:
-    main:                Spec.hs
-    source-dirs:         test
-    ghc-options:
-    - -threaded
-    - -rtsopts
-    - -with-rtsopts=-N
-    dependencies:
-    - rosby-client
+  - network

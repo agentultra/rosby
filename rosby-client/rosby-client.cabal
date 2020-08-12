@@ -4,13 +4,13 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 9c135e1f89f43421281d214e53e6cf1e426b25fd29bec96ab2a72f2e6ed5df22
+-- hash: f8f6d2c0a41d54fb51514380bf29fbad5598aa317fa8f50632a8a902492e557d
 
 name:           rosby-client
 version:        0.1.0.0
 description:    Please see the README on GitHub at <https://github.com/githubuser/rosby-client#readme>
-homepage:       https://github.com/githubuser/rosby-client#readme
-bug-reports:    https://github.com/githubuser/rosby-client/issues
+homepage:       https://github.com/agentultra/rosby#readme
+bug-reports:    https://github.com/agentultra/rosby/issues
 author:         Author name here
 maintainer:     example@example.com
 copyright:      2020 Author name here
@@ -23,40 +23,19 @@ extra-source-files:
 
 source-repository head
   type: git
-  location: https://github.com/githubuser/rosby-client
+  location: https://github.com/agentultra/rosby
 
 library
   exposed-modules:
       Lib
+      Rosby.Client
   other-modules:
       Paths_rosby_client
   hs-source-dirs:
       src
   build-depends:
       base >=4.7 && <5
-  default-language: Haskell2010
-
-executable rosby-client-exe
-  main-is: Main.hs
-  other-modules:
-      Paths_rosby_client
-  hs-source-dirs:
-      app
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N
-  build-depends:
-      base >=4.7 && <5
-    , rosby-client
-  default-language: Haskell2010
-
-test-suite rosby-client-test
-  type: exitcode-stdio-1.0
-  main-is: Spec.hs
-  other-modules:
-      Paths_rosby_client
-  hs-source-dirs:
-      test
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N
-  build-depends:
-      base >=4.7 && <5
-    , rosby-client
+    , bytestring
+    , network
+    , rosby-core
   default-language: Haskell2010
