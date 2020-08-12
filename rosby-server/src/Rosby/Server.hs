@@ -54,8 +54,6 @@ handler socket = do
     liftIO $ S.sendAll socket $ B8.pack $ show cmd
     handler socket
 
-type LogLine = (Loc, LogSource, LogLevel, LogStr)
-
 dispatcher :: Chan LogLine -> Context -> Socket -> SocketDispatcher ()
 dispatcher logChan ctx socket = do
   liftIO $ forever $ runStdoutLoggingT $ do

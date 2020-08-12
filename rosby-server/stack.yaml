@@ -31,9 +31,7 @@ compiler: ghc-8.10.1
 #   - wai
 
 packages:
-- rosby-server
-- rosby-core
-- rosby-client
+- .
 
 # Dependency packages to be pulled from upstream that are not in the resolver.
 # These entries can reference officially published versions as well as
@@ -47,6 +45,7 @@ packages:
 # extra-deps: []
 extra-deps:
 - Cabal-3.2.0.0
+- ../rosby-core
 
 # Override default flag values for local packages and extra-deps
 # flags: {}
