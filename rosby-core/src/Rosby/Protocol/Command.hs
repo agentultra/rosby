@@ -1,6 +1,7 @@
 module Rosby.Protocol.Command where
 
 import Data.ByteString (ByteString)
+import qualified Data.ByteString as BS
 import Rosby.Protocol.Serial
 
 newtype Key = Key { unKey :: ByteString }
@@ -34,3 +35,15 @@ parseGet _ = Left "Invalid get command"
 parseDelete :: [Primitive] -> Either String Command
 parseDelete ((Str _ y):_) = Right $ Delete (Key y)
 parseDelete _ = Left "Invalid delete command"
+
+toPrim :: Command -> Primitive
+toPrim (Set (Key key) value) =
+  let keyLen = BS.length key
+      valLen = BS.length value
+  in Array 3 [(Str 3 "SET"), (Str keyLen key), (Str valLen value)]
+toPrim (Get (Key key)) =
+  let keyLen = BS.length key
+  in Array 2 [(Str 3 "GET"), (Str keyLen key)]
+toPrim (Delete (Key key)) =
+  let keyLen = BS.length key
+  in Array 2 [(Str 3 "DEL"), (Str keyLen key)]
