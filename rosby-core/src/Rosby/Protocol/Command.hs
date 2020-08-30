@@ -47,3 +47,6 @@ toPrim (Get (Key key)) =
 toPrim (Delete (Key key)) =
   let keyLen = BS.length key
   in Array 2 [(Str 3 "DEL"), (Str keyLen key)]
+
+serializeCommand :: Command -> ByteString
+serializeCommand = serialize . toPrim

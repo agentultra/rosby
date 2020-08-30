@@ -1,7 +1,9 @@
 module Rosby.Client where
 
 import Data.ByteString (ByteString)
+import qualified Data.ByteString.Char8 as B8
 import Network.Socket
+import qualified Network.Socket.ByteString as BS
 
 import Rosby.Protocol.Command
 import Rosby.Protocol.Serial
@@ -25,6 +27,12 @@ data RosbyClientConfig
 
 defaultConfig :: RosbyClientConfig
 defaultConfig = RosbyClientConfig "localhost" "1993"
+
+sendCommand :: Socket -> Command -> IO ()
+sendCommand sock command = do
+  BS.sendAll sock $ serializeCommand command
+  msg <- BS.recv sock 1024
+  putStrLn $ B8.unpack msg
 
 runRosby :: RosbyClientConfig -> (Socket -> IO a) -> IO a
 runRosby (RosbyClientConfig host port) client = withSocketsDo $ do
