@@ -19,6 +19,7 @@ import System.IO
 import Rosby.Config
 import Rosby.Protocol.Serial
 import Rosby.Protocol.Command
+import Rosby.Protocol.Response
 
 newtype Context
   = Context
@@ -51,7 +52,8 @@ handler socket = do
   input <- liftIO $ S.recv socket 1024
   unless (B.null input) $ do
     let cmd = runParser input
-    liftIO $ S.sendAll socket $ B8.pack $ show cmd
+    let response = Response Ok
+    liftIO $ S.sendAll socket $ serializeResponse response
     handler socket
 
 dispatcher :: Chan LogLine -> Context -> Socket -> SocketDispatcher ()

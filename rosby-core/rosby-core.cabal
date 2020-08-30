@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: ba43aaf3e842bab2a44f83f1d56e69b93ebec09a966a20e0b8b17a79d56ea470
+-- hash: cb64b7710b684979e6c5b0e39f7cb9882f96611438637034779ccbfc939865ce
 
 name:           rosby-core
 version:        0.1.0.0
@@ -27,6 +27,7 @@ source-repository head
 library
   exposed-modules:
       Rosby.Protocol.Command
+      Rosby.Protocol.Response
       Rosby.Protocol.Serial
   other-modules:
       Paths_rosby_core
