@@ -21,9 +21,10 @@ import Rosby.Protocol.Serial
 import Rosby.Protocol.Command
 import Rosby.Protocol.Response
 
-newtype Context
+data Context
   = Context
-  { _contextConfig :: Config
+  { _contextConfig  :: Config
+  , _contextLogChan :: Chan LogLine
   }
 
 newtype Handler a = Handler { runHandler :: ReaderT Context (LoggingT IO) a }
@@ -36,34 +37,40 @@ newtype Handler a = Handler { runHandler :: ReaderT Context (LoggingT IO) a }
     , MonadIO
     )
 
-newtype SocketDispatcher a = SocketDispatcher { runDispatcher :: LoggingT IO a }
+newtype SocketDispatcher a = SocketDispatcher { runDispatcher :: ReaderT Context (LoggingT IO) a }
   deriving
     ( Applicative
     , Functor
     , Monad
     , MonadLogger
     , MonadIO
+    , MonadReader Context
     )
 
 handler :: Socket -> Handler ()
 handler socket = do
-  (Context configs) <- ask
+  (Context configs _) <- ask
   $(logDebug) "We has connection"
   input <- liftIO $ S.recv socket 1024
   unless (B.null input) $ do
     let cmd = runParser input
+    -- TODO (james): wire this up
     let response = Response Ok
     liftIO $ S.sendAll socket $ serializeResponse response
     handler socket
 
-dispatcher :: Chan LogLine -> Context -> Socket -> SocketDispatcher ()
-dispatcher logChan ctx socket = do
-  liftIO $ forever $ runStdoutLoggingT $ do
-    $(logDebug) "ROSBY!!!!"
+dispatcher :: Socket -> SocketDispatcher ()
+dispatcher socket = do
+  ctx@(Context _ logChan) <- ask
+  $(logDebug) "Rosby!!!"
+  liftIO $ forever $ do
     (conn, _peer) <- liftIO $ accept socket
-    liftIO $ void $ forkFinally (doHandle conn logChan ctx) (const $ gracefulClose conn 5000)
-  where
-    doHandle conn logChan = runChanLoggingT logChan . runReaderT (runHandler $ handler conn)
+    liftIO
+      $ void
+      $ forkFinally
+      (runChanLoggingT logChan
+       . flip runReaderT ctx
+       . runHandler $ handler conn) (const $ gracefulClose conn 5000)
 
 type Port = String
 
@@ -78,15 +85,25 @@ resolve host port = do
 
 start :: IO ()
 start = withSocketsDo $ runStdoutLoggingT $ do
-  $(logDebug) "Rosby, reporting for duty!"
   config <- liftIO $ defaultConfig "rosby"
   logChan <- liftIO newChan
   rosbyConfigs :: RosbyConfig <- liftIO $ getFromRootConfig config
-  let ctx = Context config
+  let ctx = Context config logChan
   let h = serverHost rosbyConfigs
   let p = serverPort rosbyConfigs
   addr <- liftIO $ resolve (T.unpack h) (show p)
-  liftIO $ bracket (open addr) close (runStdoutLoggingT . runDispatcher . dispatcher logChan ctx)
+  $(logDebug) "Server starting up..."
+  liftIO $ forkIO $ logger logChan
+  liftIO $ bracket (open addr) close (doDispatcher logChan ctx . dispatcher)
+  where
+    doDispatcher logChan ctx =
+      runChanLoggingT logChan
+      . flip runReaderT ctx
+      . runDispatcher
+
+logger :: Chan LogLine -> IO ()
+logger logChan = runStdoutLoggingT $ do
+  unChanLoggingT logChan
 
 open :: AddrInfo -> IO Socket
 open addr = do
