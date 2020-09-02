@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: bea4945cf0a2379f021b425ed924e1ae909b6270cade611d488552915cfe67a5
+-- hash: 56ed2dcfbcdd3f131c12311bdcb65c0a6907e669297105f20bdd85b9a9292001
 
 name:           rosby-server
 version:        0.1.0.0
@@ -28,6 +28,7 @@ library
   exposed-modules:
       Rosby.Config
       Rosby.Server
+      Rosby.Store.BTree
   other-modules:
       Paths_rosby_server
   hs-source-dirs:
@@ -45,6 +46,7 @@ library
     , network
     , rosby-core
     , text
+    , vector
     , word8
   default-language: Haskell2010
 

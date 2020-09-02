@@ -43,6 +43,7 @@ library:
   - QuickCheck
   - rosby-core
   - text
+  - vector
   - word8
 
 executables:
