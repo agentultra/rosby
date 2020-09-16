@@ -21,6 +21,7 @@ mkOrder x
 -- Invariant:
 --   Can't have less than `order/2` children
 --     Exception: when it's the root, at least 2 children
+--   Keys must maintain Ord order
 data Node k v
   = Node
   { nodeOrder :: Order
@@ -50,14 +51,14 @@ newtype BTree k v = BTree { getRoot :: BTreeNode k v }
 empty :: Int -> BTree k v
 empty order = BTree $ BLeaf $ Leaf (mkOrder order) V.empty V.empty Nothing
 
-insert :: BTree k v -> k -> v -> BTree k v
+insert :: (Ord k, Ord v) => BTree k v -> k -> v -> BTree k v
 insert (BTree (BLeaf leaf@(Leaf (Order order) keys values _))) key value
-  | (V.length keys) < order =
+  | (V.length keys) < (order - 1) =
     BTree $ BLeaf $ leaf
-    { leafKeys = V.cons key keys
+    { leafKeys = V.fromList . sort . V.toList . V.cons key $ keys
     , leafValues = V.cons value values
     }
-  | otherwise = _
+  | otherwise = BTree $ BNode $ splitLeaf leaf key value
 
 splitLeaf :: (Ord k, Ord v) => Leaf k v -> k -> v -> Node k v
 splitLeaf (Leaf (Order order) ks vs _) k v =
