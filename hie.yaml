@@ -1,0 +1,8 @@
+cradle:
+  stack:
+    - path: "./src/rosby-server"
+      component: "rosby-server:lib"
+    - path: "./src/rosby-core"
+      component: "rosby-core:lib"
+    - path: "./src/rosby-client"
+      component: "rosby-client:lib"
