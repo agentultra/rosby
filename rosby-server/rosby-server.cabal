@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 56ed2dcfbcdd3f131c12311bdcb65c0a6907e669297105f20bdd85b9a9292001
+-- hash: 76fc99fb744ed2d3d8647b10e37bfe421c46e139374fb0670121d6a1cfc07279
 
 name:           rosby-server
 version:        0.1.0.0
@@ -29,6 +29,7 @@ library
       Rosby.Config
       Rosby.Server
       Rosby.Store.BTree
+      Rosby.Store.GBTree
   other-modules:
       Paths_rosby_server
   hs-source-dirs:
