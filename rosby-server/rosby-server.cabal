@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 56ed2dcfbcdd3f131c12311bdcb65c0a6907e669297105f20bdd85b9a9292001
+-- hash: d95328eb2d74a92a7ac28721ea1f477216a76a203ecda2a77c80c81ed273ef9f
 
 name:           rosby-server
 version:        0.1.0.0
@@ -41,6 +41,7 @@ library
     , base >=4.7 && <5
     , bytestring
     , conferer
+    , containers
     , monad-logger
     , mtl
     , network

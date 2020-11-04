@@ -37,6 +37,7 @@ library:
   - attoparsec
   - bytestring
   - conferer
+  - containers
   - mtl
   - monad-logger
   - network
