@@ -22,8 +22,14 @@ data Node k v
   }
   deriving (Eq, Show)
 
+node :: Order -> Vector k -> Vector (BTree k v) -> BTree k v
+node o ks childs = BNode o $ Node ks childs
+
 newtype Leaf k v = Leaf { leafValues :: Map k v }
   deriving (Eq, Show)
+
+leaf :: Order -> Map k v -> BTree k v
+leaf o vs = BLeaf o $ Leaf vs
 
 data BTree k v
   = BNode Order (Node k v)
@@ -37,41 +43,42 @@ insertWith :: Ord k => k -> v -> Zipper k v -> Zipper k v
 insertWith k v z@(BLeaf o@(Order o') (Leaf vs), cs)
   | M.size vs < o' = (BLeaf o $ Leaf (M.insert k v vs), cs)
   | otherwise =
-    let overflowed = M.insert k v vs
-        mid = M.size vs `div` 2
-    in case M.lookup mid vs of
-      Nothing -> _
-      Just k' ->
-        let (left, right) = M.split mid
-        in mergeUp (BNode o $ Node (V.singleton k') (V.fromList [left, right])) z
+    let (left, right) = M.spanAntitone (< k) vs
+    in mergeUp (node o (V.singleton k) (V.fromList [leaf o left, leaf o right])) z
+insertWith _ _ _ = undefined
 
 zipper :: BTree k v -> Zipper k v
 zipper = (, [])
 
-mergeUp :: BTree k v -> Zipper k v -> Zipper k v
-mergeUp t  = merge t . moveUp
+mergeUp :: Ord k => BTree k v -> Zipper k v -> Zipper k v
+mergeUp t z = maybe (merge t z) (merge t) . moveUp $ z
 
 -- | Merge a @BNode@ with the currently focused node of the zipper,
 -- ignore @BLeaf@ and return the input zipper
-merge :: BTree k v -> Zipper k v -> Zipper k v
+merge :: Ord k => BTree k v -> Zipper k v -> Zipper k v
 merge (BLeaf _ _) z = z
 merge _ z@(BLeaf _ _, _) = z
 merge (BNode (Order o) (Node ks childs)) (BNode o' (Node ks' childs'), cs)
   | V.length childs' <= o - 2 =
-    let (ki, ks'') = insertKey (V.head ks) ks'
-        childs'' = insertChilds ki childs childs'
+    let (keyIndex, ks'') = insertKey (V.head ks) ks'
+        childs'' = insertChilds keyIndex childs childs'
     in (BNode o' $ Node ks'' childs'', cs)
   | otherwise = undefined
 
-insertKey :: k -> Vector k -> (a, b)
-insertKey = undefined
+insertKey :: Ord k => k -> Vector k -> (Int, Vector k)
+insertKey key keys =
+  let (left, right) = V.partition (< key) keys
+  in (V.length left, left <> V.singleton key <> right)
 
 insertChilds
-  :: Int
+  :: Int -- | Insert the "left" childen and "children" _around_ this index
+  -> Vector (BTree k v) -- | The children to insert
+  -> Vector (BTree k v) -- | The children to insert into
   -> Vector (BTree k v)
-  -> Vector (BTree k v)
-  -> Vector (BTree k v)
-insertChilds = undefined
+insertChilds idx cs csInto
+  = V.slice 0 (idx - 1) csInto
+  <> cs
+  <> V.slice (idx + 1) (V.length csInto - 1) csInto
 
 unzipper :: Zipper k v -> BTree k v
 unzipper (t, _) = t
