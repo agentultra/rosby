@@ -2,6 +2,7 @@
 
 module Rosby.Store.BTree where
 
+import Data.List
 import Data.Vector (Vector, (!?))
 import qualified Data.Vector as V
 import Data.Map.Strict (Map)
@@ -58,12 +59,27 @@ mergeUp t z = maybe (merge t z) (merge t) . moveUp $ z
 merge :: Ord k => BTree k v -> Zipper k v -> Zipper k v
 merge (BLeaf _ _) z = z
 merge _ z@(BLeaf _ _, _) = z
-merge (BNode (Order o) (Node ks childs)) (BNode o' (Node ks' childs'), cs)
+merge (BNode (Order o) (Node ks childs)) z@(BNode o' (Node ks' childs'), cs)
   | V.length childs' <= o - 2 =
     let (keyIndex, ks'') = insertKey (V.head ks) ks'
         childs'' = insertChilds keyIndex childs childs'
     in (BNode o' $ Node ks'' childs'', cs)
-  | otherwise = undefined
+  | otherwise =
+    mergeUp (BNode o'
+             (Node
+              (V.singleton middleKey)
+              (V.fromList [ node o' (V.takeWhile (< middleKey) ks') (V.take (middleKeyIndex childs' + 1) childs')
+                          , node o' (V.dropWhile (<= middleKey) ks') (V.drop (middleKeyIndex childs' + 1) childs')
+                          ]) )) z
+  where
+    middleKeyIndex :: Vector a -> Int
+    middleKeyIndex v = V.length v `div` 2
+
+    middleKey :: k
+    middleKey = undefined
+
+    -- middleKey :: Int -> Vector a -> Maybe k
+    -- middleKey x v = x !? v
 
 insertKey :: Ord k => k -> Vector k -> (Int, Vector k)
 insertKey key keys =
@@ -111,3 +127,15 @@ example1 = BNode (order 4)
    [ BLeaf (order 4) $ Leaf (M.fromList [(1, 'a'), (2, 'b')])
    , BLeaf (order 4) $ Leaf (M.fromList [(4, 'c'), (5, 'd')])
    ])
+
+-- mergeTree :: Ord k => BTree k v -> BTree k v -> BTree k v
+-- mergeTree _ t = t
+-- mergeTree
+--   (BNode _ (Node mergeKeys mergeChilds))
+--   (BNode _ (Node parentKeys parentChilds))
+--   = let totesKeys = V.fromList . sort . V.toList $ ((V.++) mergeKeys parentKeys)
+--         totesChilds = mergeChilds V.++ parentChilds
+--     in case V.head totesChilds of
+--          -- Assume that the vectors are homogenous...
+--          BNode _ _ -> _
+--          BLeaf _ _  -> _
