@@ -1,2 +1,1 @@
-main :: IO ()
-main = putStrLn "Not implemented"
+{-# OPTIONS_GHC -F -pgmF hspec-discover #-}

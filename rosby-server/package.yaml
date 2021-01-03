@@ -69,6 +69,7 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - bytestring
+    - containers
     - hspec
     - hspec-golden
     - QuickCheck

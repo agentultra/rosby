@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: d85179d5d3d351ccdfabdcd580b7e13bf19010bb5d727d2eb5e41216c6f1e7a0
+-- hash: b44551b8e2b527d51e8c8aa685b921e59db71393e9a2853f3ddc209aa1b6b733
 
 name:           rosby-server
 version:        0.1.0.0
@@ -70,6 +70,7 @@ test-suite rosby-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      Rosby.Store.BTreeSpec
       Paths_rosby_server
   hs-source-dirs:
       test
@@ -80,6 +81,7 @@ test-suite rosby-test
     , QuickCheck
     , base >=4.7 && <5
     , bytestring
+    , containers
     , hspec
     , hspec-golden
     , rosby-core
