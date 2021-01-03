@@ -75,3 +75,4 @@ tests:
     - QuickCheck
     - rosby-core
     - rosby-server
+    - vector

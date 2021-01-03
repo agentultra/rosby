@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: b44551b8e2b527d51e8c8aa685b921e59db71393e9a2853f3ddc209aa1b6b733
+-- hash: 9964e77a8e57919874fe23d4920683eaccf7bfde07592c51051d9a0e029fa0a7
 
 name:           rosby-server
 version:        0.1.0.0
@@ -86,4 +86,5 @@ test-suite rosby-test
     , hspec-golden
     , rosby-core
     , rosby-server
+    , vector
   default-language: Haskell2010

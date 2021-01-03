@@ -37,7 +37,7 @@ data BTree k v
   | BLeaf Order (Leaf k v)
   deriving (Eq, Show)
 
-insert :: Ord k => k -> v -> BTree k v -> BTree k v
+insert :: (Eq k, Ord k, Show k) => k -> v -> BTree k v -> BTree k v
 insert k v = unzipper . moveToTop . insertWith k v . zipper
 
 insertWith :: Ord k => k -> v -> Zipper k v -> Zipper k v
@@ -48,7 +48,7 @@ insertWith k v z@(BLeaf o@(Order o') (Leaf vs), cs)
     in mergeUp (node o (V.singleton k) (V.fromList [leaf o left, leaf o right])) z
 insertWith _ _ _ = undefined
 
-zipper :: BTree k v -> Zipper k v
+zipper :: (Eq k, Ord k, Show k) => BTree k v -> Zipper k v
 zipper = (, [])
 
 mergeUp :: Ord k => BTree k v -> Zipper k v -> Zipper k v
@@ -96,7 +96,7 @@ insertChilds idx cs csInto
   <> cs
   <> V.slice (idx + 1) (V.length csInto - 1) csInto
 
-unzipper :: Zipper k v -> BTree k v
+unzipper :: (Eq k, Ord k, Show k) => Zipper k v -> BTree k v
 unzipper (t, _) = t
 
 data Crumb k v = Down Order (Vector k) (Vector (BTree k v))
