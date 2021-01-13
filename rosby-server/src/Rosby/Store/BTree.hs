@@ -2,8 +2,7 @@
 
 module Rosby.Store.BTree where
 
-import Data.List
-import Data.Vector (Vector, (!?))
+import Data.Vector (Vector, (!?), (//))
 import qualified Data.Vector as V
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M
@@ -38,7 +37,7 @@ data BTree k v
   deriving (Eq, Show)
 
 insert :: (Eq k, Ord k, Show k) => k -> v -> BTree k v -> BTree k v
-insert k v = unzipper . moveToTop . insertWith k v . zipper
+insert k v = unzipper . insertWith k v . zipper
 
 insertWith :: Ord k => k -> v -> Zipper k v -> Zipper k v
 insertWith k v z@(BLeaf o@(Order o') (Leaf vs), cs)
@@ -96,10 +95,12 @@ insertChilds idx cs csInto
   <> cs
   <> V.slice (idx + 1) (V.length csInto - 1) csInto
 
-unzipper :: (Eq k, Ord k, Show k) => Zipper k v -> BTree k v
-unzipper (t, _) = t
+unzipper :: Zipper k v -> BTree k v
+unzipper z = case moveUp z of
+  Nothing -> fst z
+  Just z' -> unzipper z'
 
-data Crumb k v = Down Order (Vector k) (Vector (BTree k v))
+data Crumb k v = DownTo Int Order (Vector k) (Vector (BTree k v))
   deriving (Eq, Show)
 
 type Zipper k v = (BTree k v, [Crumb k v])
@@ -107,26 +108,14 @@ type Zipper k v = (BTree k v, [Crumb k v])
 moveDown :: Int -> Zipper k v -> Maybe (Zipper k v)
 moveDown _ (BLeaf _ _, _) = Nothing
 moveDown idx (BNode o (Node ks childs), cs) =
-  (, Down o ks childs:cs) <$> childs !? idx
+  (, DownTo idx o ks childs:cs) <$> childs !? idx
 
 moveUp :: Zipper k v -> Maybe (Zipper k v)
 moveUp (_, []) = Nothing
-moveUp (_, Down o ks childs:cs) = pure (BNode o $ Node ks childs, cs)
+moveUp (t, DownTo idx o keys childs:cs) = Just (node o keys childs', cs)
+  where
+    childs' = childs // [(idx, t)]
 
-moveToTop :: Zipper k v -> Zipper k v
-moveToTop z = case moveUp z of
-  Nothing -> z
-  Just z' -> moveToTop z'
-
--- examples
-
-example1 :: BTree Int Char
-example1 = BNode (order 4)
-  $ Node (V.fromList [3, 4])
-  (V.fromList
-   [ BLeaf (order 4) $ Leaf (M.fromList [(1, 'a'), (2, 'b')])
-   , BLeaf (order 4) $ Leaf (M.fromList [(4, 'c'), (5, 'd')])
-   ])
 
 -- mergeTree :: Ord k => BTree k v -> BTree k v -> BTree k v
 -- mergeTree _ t = t

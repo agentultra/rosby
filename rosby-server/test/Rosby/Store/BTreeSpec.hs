@@ -1,6 +1,7 @@
 module Rosby.Store.BTreeSpec where
 
 import Control.Monad
+import Data.Maybe
 import Test.Hspec
 import qualified Data.Map.Strict as M
 import qualified Data.Vector as V
@@ -21,7 +22,9 @@ spec = do
               [ leaf (order 3) $ M.fromList [('A', 0), ('B', 1)]
               , leaf (order 3) $ M.fromList [('C', 2), ('D', 3)]
               ]
-        (unzipper <=< moveToTop <=< moveDown 0 <=< zipper $ root)
+        unzipper (fromMaybe undefined (moveDown 0 $ zipper root))
+          `shouldBe`
+          root
 
     describe "insert" $ do
       it "should keep a value inserted into an empty root" $ do
