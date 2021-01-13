@@ -26,6 +26,16 @@ spec = do
           `shouldBe`
           root
 
+      it "should move down, up, then unzip to the root" $ do
+        let root = node (order 3) (V.fromList ['C'])
+              $ V.fromList
+              [ leaf (order 3) $ M.fromList [('A', 0), ('B', 1)]
+              , leaf (order 3) $ M.fromList [('C', 2), ('D', 3)]
+              ]
+        unzipper (fromMaybe undefined (moveUp <=< moveDown 0 $ zipper root))
+          `shouldBe`
+          root
+
     describe "insert" $ do
       it "should keep a value inserted into an empty root" $ do
         let root = leaf (order 3) M.empty
@@ -37,4 +47,7 @@ spec = do
         let root = leaf (order 3) $ M.fromList [('A', 0), ('B', 1), ('C', 2)]
         insert 'D' 3 root
         `shouldBe`
-          (node (order 3) (V.fromList ['C']) $ V.fromList [leaf (order 3) $ M.fromList [('A', 0), ('B', 1)], leaf (order 3) $ M.fromList [('C', 2), ('D', 3)]])
+          (node (order 3) (V.fromList ['C'])
+           $ V.fromList [ leaf (order 3) $ M.fromList [('A', 0), ('B', 1)]
+                        , leaf (order 3) $ M.fromList [('C', 2), ('D', 3)]
+                        ])

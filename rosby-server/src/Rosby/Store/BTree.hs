@@ -2,6 +2,7 @@
 
 module Rosby.Store.BTree where
 
+import Data.List
 import Data.Vector (Vector, (!?), (//))
 import qualified Data.Vector as V
 import Data.Map.Strict (Map)
@@ -36,15 +37,20 @@ data BTree k v
   | BLeaf Order (Leaf k v)
   deriving (Eq, Show)
 
-insert :: (Eq k, Ord k, Show k) => k -> v -> BTree k v -> BTree k v
+insert :: (Eq k, Ord k, Show k, Show v) => k -> v -> BTree k v -> BTree k v
 insert k v = unzipper . insertWith k v . zipper
 
-insertWith :: Ord k => k -> v -> Zipper k v -> Zipper k v
+insertWith :: (Ord k, Show k, Show v) => k -> v -> Zipper k v -> Zipper k v
 insertWith k v z@(BLeaf o@(Order o') (Leaf vs), cs)
   | M.size vs < o' = (BLeaf o $ Leaf (M.insert k v vs), cs)
   | otherwise =
-    let (left, right) = M.spanAntitone (< k) vs
-    in mergeUp (node o (V.singleton k) (V.fromList [leaf o left, leaf o right])) z
+    let allKeys = V.fromList . sort $ (k : M.keys vs)
+        mid = V.length allKeys `div` 2
+    in case allKeys !? mid of
+      Nothing -> undefined
+      Just nk ->
+        let (left, right) = M.partitionWithKey (\x _ -> x < nk) $ M.insert k v vs
+        in mergeUp (node o (V.singleton nk) (V.fromList [leaf o left, leaf o right])) z
 insertWith _ _ _ = undefined
 
 zipper :: (Eq k, Ord k, Show k) => BTree k v -> Zipper k v
