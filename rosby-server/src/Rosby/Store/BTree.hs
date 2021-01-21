@@ -23,41 +23,82 @@ data Node k v
   }
   deriving (Eq, Show)
 
+instance (Ord k, Eq v) => Ord (Node k v) where
+  Node k _ <= Node k' _ = k <= k'
+
 node :: Order -> Vector k -> Vector (BTree k v) -> BTree k v
 node o ks childs = BNode o $ Node ks childs
 
-newtype Leaf k v = Leaf { leafValues :: Map k v }
+data Leaf k v
+  = Leaf (Vector k) (Vector v)
   deriving (Eq, Show)
 
-leaf :: Order -> Map k v -> BTree k v
-leaf o vs = BLeaf o $ Leaf vs
+instance (Ord k, Eq v) => Ord (Leaf k v) where
+  Leaf k _ <= Leaf k' _ = k <= k'
+
+leaf :: Order -> [(k, v)] -> BTree k v
+leaf o kvs =
+  let ks = V.fromList . map fst $ kvs
+      vs = V.fromList . map snd $ kvs
+  in BLeaf o $ Leaf ks vs
 
 data BTree k v
   = BNode Order (Node k v)
   | BLeaf Order (Leaf k v)
   deriving (Eq, Show)
 
-insert :: (Eq k, Ord k, Show k, Show v) => k -> v -> BTree k v -> BTree k v
-insert k v = unzipper . insertWith k v . zipper
+instance (Ord k, Ord v) => Ord (BTree k v) where
+  BNode _ n <= BNode _ n' = n <= n'
+  BLeaf _ l <= BLeaf _ l' = l <= l'
+  BNode _ (Node n _) <= BLeaf _ (Leaf l _) = n <= l
+  BLeaf _ (Leaf l _) <= BNode _ (Node n _) = l <= n
 
-insertWith :: (Ord k, Show k, Show v) => k -> v -> Zipper k v -> Zipper k v
-insertWith k v z@(BLeaf o@(Order o') (Leaf vs), cs)
-  | M.size vs < o' = (BLeaf o $ Leaf (M.insert k v vs), cs)
-  | otherwise =
-    let allKeys = V.fromList . sort $ (k : M.keys vs)
-        mid = V.length allKeys `div` 2
-    in case allKeys !? mid of
-      Nothing -> undefined
-      Just nk ->
-        let (left, right) = M.partitionWithKey (\x _ -> x < nk) $ M.insert k v vs
-        in mergeUp (node o (V.singleton nk) (V.fromList [leaf o left, leaf o right])) z
-insertWith _ _ _ = undefined
+insertLeaf :: (Ord k, Ord v) => k -> v -> BTree k v -> Maybe (BTree k v)
+insertLeaf k v (BLeaf (Order o) (Leaf ks vs))
+  | V.length ks == V.length vs && V.length ks < o =
+    Just $ leaf (order o) $ V.toList $ insertInto k v (V.zip ks vs)
+  | otherwise = Nothing
+  where
+    insertInto :: (Ord k, Ord v) => k -> v -> Vector (k, v) -> Vector (k, v)
+    insertInto k' v' = V.fromList . sort . (:) (k', v') . V.toList
+insertLeaf _ _ _ = Nothing
+
+-- insert :: (Eq k, Ord k, Show k, Show v) => k -> v -> BTree k v -> BTree k v
+-- insert k v = unzipper . insertWith k v . zipper
+
+-- insertWith :: (Ord k, Show k, Show v) => k -> v -> Zipper k v -> Zipper k v
+--   insertWith k v z@(BLeaf o@(Order o') (Leaf ks vs)), cs)
+--   | M.size vs < o' = (BLeaf o $ insertLeaf , cs)
+--   | otherwise =
+--     let allKeys = V.fromList . sort $ (k : M.keys vs)
+--         mid = V.length allKeys `div` 2
+--     in case allKeys !? mid of
+--       Nothing -> undefined
+--       Just nk ->
+--         let (left, right) = M.partitionWithKey (\x _ -> x < nk) $ M.insert k v vs
+--         in mergeUp (node o (V.singleton nk) (V.fromList [leaf o left, leaf o right])) z
+-- insertWith _ _ _ = undefined
 
 zipper :: (Eq k, Ord k, Show k) => BTree k v -> Zipper k v
 zipper = (, [])
 
 mergeUp :: Ord k => BTree k v -> Zipper k v -> Zipper k v
 mergeUp t z = maybe (merge t z) (merge t) . moveUp $ z
+
+mergeNode
+  :: (Ord k, Ord v)
+  => BTree k v         -- ^ The node to merge with
+  -> BTree k v         -- ^ The node to merge
+  -> Maybe (BTree k v) -- ^ We can only merge @BNode@ and return
+                       -- @Nothing@ in all other cases
+mergeNode (BNode o (Node keys childs)) (BNode o' (Node keys' childs'))
+  | o /= o'   = Nothing
+  | otherwise =
+      Just $ node o mergedKeys mergedChilds
+  where
+    mergedKeys = V.fromList . sort . V.toList $ V.concat [keys, keys']
+    mergedChilds = V.fromList . nub . sort . V.toList $ V.concat [childs, childs']
+mergeNode _ _ = Nothing
 
 -- | Merge a @BNode@ with the currently focused node of the zipper,
 -- ignore @BLeaf@ and return the input zipper
