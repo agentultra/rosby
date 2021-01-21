@@ -5,8 +5,6 @@ module Rosby.Store.BTree where
 import Data.List
 import Data.Vector (Vector, (!?), (//))
 import qualified Data.Vector as V
-import Data.Map.Strict (Map)
-import qualified Data.Map.Strict as M
 
 newtype Order = Order Int
   deriving (Eq, Show)
@@ -63,69 +61,18 @@ insertLeaf k v (BLeaf (Order o) (Leaf ks vs))
     insertInto k' v' = V.fromList . sort . (:) (k', v') . V.toList
 insertLeaf _ _ _ = Nothing
 
--- insert :: (Eq k, Ord k, Show k, Show v) => k -> v -> BTree k v -> BTree k v
--- insert k v = unzipper . insertWith k v . zipper
-
--- insertWith :: (Ord k, Show k, Show v) => k -> v -> Zipper k v -> Zipper k v
---   insertWith k v z@(BLeaf o@(Order o') (Leaf ks vs)), cs)
---   | M.size vs < o' = (BLeaf o $ insertLeaf , cs)
---   | otherwise =
---     let allKeys = V.fromList . sort $ (k : M.keys vs)
---         mid = V.length allKeys `div` 2
---     in case allKeys !? mid of
---       Nothing -> undefined
---       Just nk ->
---         let (left, right) = M.partitionWithKey (\x _ -> x < nk) $ M.insert k v vs
---         in mergeUp (node o (V.singleton nk) (V.fromList [leaf o left, leaf o right])) z
--- insertWith _ _ _ = undefined
-
 zipper :: (Eq k, Ord k, Show k) => BTree k v -> Zipper k v
 zipper = (, [])
 
-mergeUp :: Ord k => BTree k v -> Zipper k v -> Zipper k v
-mergeUp t z = maybe (merge t z) (merge t) . moveUp $ z
+mergeUp :: (Ord k, Ord v) => BTree k v -> Zipper k v -> Maybe (Zipper k v)
+mergeUp (BNode _ (Node childKeys grandchildren)) (_, DownTo idx o keys childs:cs) = do
+  let (left, right) = V.splitAt idx childs
+      right' = if V.length right > 0 then V.tail right else right
+  pure (node o (mergeKeys keys childKeys) (V.concat [left, grandchildren, right']), cs)
+mergeUp _ (_, _) = Nothing
 
-mergeNode
-  :: (Ord k, Ord v)
-  => BTree k v         -- ^ The node to merge with
-  -> BTree k v         -- ^ The node to merge
-  -> Maybe (BTree k v) -- ^ We can only merge @BNode@ and return
-                       -- @Nothing@ in all other cases
-mergeNode (BNode o (Node keys childs)) (BNode o' (Node keys' childs'))
-  | o /= o'   = Nothing
-  | otherwise =
-      Just $ node o mergedKeys mergedChilds
-  where
-    mergedKeys = V.fromList . sort . V.toList $ V.concat [keys, keys']
-    mergedChilds = V.fromList . nub . sort . V.toList $ V.concat [childs, childs']
-mergeNode _ _ = Nothing
-
--- | Merge a @BNode@ with the currently focused node of the zipper,
--- ignore @BLeaf@ and return the input zipper
-merge :: Ord k => BTree k v -> Zipper k v -> Zipper k v
-merge (BLeaf _ _) z = z
-merge _ z@(BLeaf _ _, _) = z
-merge (BNode (Order o) (Node ks childs)) z@(BNode o' (Node ks' childs'), cs)
-  | V.length childs' <= o - 2 =
-    let (keyIndex, ks'') = insertKey (V.head ks) ks'
-        childs'' = insertChilds keyIndex childs childs'
-    in (BNode o' $ Node ks'' childs'', cs)
-  | otherwise =
-    mergeUp (BNode o'
-             (Node
-              (V.singleton middleKey)
-              (V.fromList [ node o' (V.takeWhile (< middleKey) ks') (V.take (middleKeyIndex childs' + 1) childs')
-                          , node o' (V.dropWhile (<= middleKey) ks') (V.drop (middleKeyIndex childs' + 1) childs')
-                          ]) )) z
-  where
-    middleKeyIndex :: Vector a -> Int
-    middleKeyIndex v = V.length v `div` 2
-
-    middleKey :: k
-    middleKey = undefined
-
-    -- middleKey :: Int -> Vector a -> Maybe k
-    -- middleKey x v = x !? v
+mergeKeys :: Ord a => Vector a -> Vector a -> Vector a
+mergeKeys xs ys = V.fromList . sort . V.toList $ V.concat [xs, ys]
 
 insertKey :: Ord k => k -> Vector k -> (Int, Vector k)
 insertKey key keys =
@@ -162,16 +109,3 @@ moveUp (_, []) = Nothing
 moveUp (t, DownTo idx o keys childs:cs) = Just (node o keys childs', cs)
   where
     childs' = childs // [(idx, t)]
-
-
--- mergeTree :: Ord k => BTree k v -> BTree k v -> BTree k v
--- mergeTree _ t = t
--- mergeTree
---   (BNode _ (Node mergeKeys mergeChilds))
---   (BNode _ (Node parentKeys parentChilds))
---   = let totesKeys = V.fromList . sort . V.toList $ ((V.++) mergeKeys parentKeys)
---         totesChilds = mergeChilds V.++ parentChilds
---     in case V.head totesChilds of
---          -- Assume that the vectors are homogenous...
---          BNode _ _ -> _
---          BLeaf _ _  -> _

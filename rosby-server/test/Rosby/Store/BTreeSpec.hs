@@ -36,24 +36,27 @@ spec = do
           `shouldBe`
           root
 
-    describe "mergeNode" $ do
-      it "should preserve the order property" $ do
-        let root = node (order 3) (V.singleton 'D')
-              $ V.fromList [ leaf (order 3) [('A', 0), ('B', 1), ('C', 2)]
-                         , leaf (order 3) [('D', 3), ('E', 4), ('F', 5)]
-                         ]
-            node' = node (order 3) (V.singleton 'G')
-              $ V.fromList [ leaf (order 3) [('D', 3), ('E', 4), ('F', 5)]
-                           , leaf (order 3) [('G', 6)]
-                           ]
-
-        (mergeNode root node')
+      it "should be able to merge a node to a parent" $ do
+        let lf = node (order 3) (V.fromList ['D', 'E'])
+                 $ V.fromList
+                 [ leaf (order 3) [('A', 0), ('B', 1), ('C', 2)]
+                 , leaf (order 3) [('D', 3)]
+                 , leaf (order 3) [('E', 4), ('F', 5), ('G', 6)]
+                 ]
+            splitNode = node (order 3) (V.singleton 'G')
+              $ V.fromList
+              [ leaf (order 3) [('E', 4), ('F', 5)]
+              , leaf (order 3) [('G', 6), ('H', 7)]
+              ]
+        (unzipper (fromMaybe undefined (mergeUp splitNode <=< moveDown 2 $ zipper lf)))
           `shouldBe`
-          Just (node (order 3) (V.fromList ['D', 'G'])
-                $ V.fromList [ leaf (order 3) [('A', 0), ('B', 1), ('C', 2)]
-                             , leaf (order 3) [('D', 3), ('E', 4), ('F', 5)]
-                             , leaf (order 3) [('G', 6)]
-                             ])
+          (node (order 3) (V.fromList ['D', 'E', 'G'])
+           $ V.fromList
+           [ leaf (order 3) [('A', 0), ('B', 1), ('C', 2)]
+           , leaf (order 3) [('D', 3)]
+           , leaf (order 3) [('E', 4), ('F', 5)]
+           , leaf (order 3) [('G', 6), ('H', 7)]
+           ])
 
       describe "insertLeaf" $ do
         it "should preserve the order property" $ do
