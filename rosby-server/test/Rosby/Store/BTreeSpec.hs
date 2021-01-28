@@ -71,6 +71,58 @@ spec = do
             `shouldBe`
             (Just $ leaf (order 3) [('A', 1), ('B', 1)])
 
+      describe "insertFind" $ do
+        it "should focus the zipper on the right most node" $ do
+          let root = node (order 3) (V.fromList ['D', 'E'])
+                $ V.fromList
+                [ leaf (order 3) [('A', 0), ('B', 1), ('C', 2)]
+                , leaf (order 3) [('D', 3)]
+                , leaf (order 3) [('E', 4), ('F', 5), ('G', 6)]
+                ]
+          (find 'H' $ zipper root)
+            `shouldBe`
+            (Just (leaf (order 3) [('E', 4), ('F', 5), ('G', 6)],
+             [ DownTo 2 (order 3) (V.fromList ['D', 'E']) $ V.fromList
+                 [ leaf (order 3) [('A', 0), ('B', 1), ('C', 2)]
+                 , leaf (order 3) [('D', 3)]
+                 , leaf (order 3) [('E', 4), ('F', 5), ('G', 6)]
+                 ]
+             ]))
+
+        it "should focus the zipper on the left most node" $ do
+          let root = node (order 3) (V.fromList ['D', 'E'])
+                $ V.fromList
+                [ leaf (order 3) [('A', 0), ('B', 1), ('C', 2)]
+                , leaf (order 3) [('D', 3)]
+                , leaf (order 3) [('E', 4), ('F', 5), ('G', 6)]
+                ]
+          (find 'A' $ zipper root)
+            `shouldBe`
+            (Just (leaf (order 3) [('A', 0), ('B', 1), ('C', 2)],
+             [ DownTo 0 (order 3) (V.fromList ['D', 'E']) $ V.fromList
+                 [ leaf (order 3) [('A', 0), ('B', 1), ('C', 2)]
+                 , leaf (order 3) [('D', 3)]
+                 , leaf (order 3) [('E', 4), ('F', 5), ('G', 6)]
+                 ]
+             ]))
+
+        it "should focus the zipper on towards the right" $ do
+          let root = node (order 3) (V.fromList ['D', 'E'])
+                $ V.fromList
+                [ leaf (order 3) [('A', 0), ('B', 1), ('C', 2)]
+                , leaf (order 3) [('D', 3)]
+                , leaf (order 3) [('E', 4), ('F', 5), ('G', 6)]
+                ]
+          (find 'D' $ zipper root)
+            `shouldBe`
+            (Just (leaf (order 3) [('D', 3)],
+             [ DownTo 1 (order 3) (V.fromList ['D', 'E']) $ V.fromList
+                 [ leaf (order 3) [('A', 0), ('B', 1), ('C', 2)]
+                 , leaf (order 3) [('D', 3)]
+                 , leaf (order 3) [('E', 4), ('F', 5), ('G', 6)]
+                 ]
+             ]))
+
     -- describe "insert" $ do
     --   it "should keep a value inserted into an empty root" $ do
     --     let root = leaf (order 3) []

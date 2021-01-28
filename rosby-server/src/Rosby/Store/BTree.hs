@@ -3,7 +3,7 @@
 module Rosby.Store.BTree where
 
 import Data.List
-import Data.Vector (Vector, (!?), (//))
+import Data.Vector (Vector, (!), (!?), (//))
 import qualified Data.Vector as V
 
 newtype Order = Order Int
@@ -109,3 +109,22 @@ moveUp (_, []) = Nothing
 moveUp (t, DownTo idx o keys childs:cs) = Just (node o keys childs', cs)
   where
     childs' = childs // [(idx, t)]
+
+find :: Ord k => k -> Zipper k v -> Maybe (Zipper k v)
+find _ z@(BLeaf _ _, _) = Just z
+find key z@(BNode _ (Node keys _), _) = moveDown (search key keys 0 (V.length keys - 1)) z
+  where
+    search :: Ord k => k -> Vector k -> Int -> Int -> Int
+    search k ks lo hi =
+      if lo == hi
+      then
+        case compare k (ks ! lo) of
+          LT -> lo
+          GT -> lo + 1
+          EQ -> undefined
+      else
+        let mid = lo + ((hi - lo) `div` 2)
+        in case compare k (ks ! mid) of
+          LT -> search k ks lo mid
+          GT -> search k ks (mid + 1) hi
+          EQ -> mid + 1
