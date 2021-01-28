@@ -2,7 +2,8 @@
 
 module Rosby.Store.BTree where
 
-import Data.List
+import Control.Monad
+import Data.List hiding (find)
 import Data.Vector (Vector, (!), (!?), (//))
 import qualified Data.Vector as V
 
@@ -128,3 +129,10 @@ find key z@(BNode _ (Node keys _), _) = moveDown (search key keys 0 (V.length ke
           LT -> search k ks lo mid
           GT -> search k ks (mid + 1) hi
           EQ -> mid + 1
+
+insertWithMerge :: (Ord k, Show k) => k -> v -> Zipper k v -> Maybe (Zipper k v)
+insertWithMerge = undefined
+
+-- TODO: We should remove the Maybe
+insert :: (Ord k, Show k) => k -> v -> BTree k v -> Maybe (BTree k v)
+insert key value root = fmap fst <$> insertWithMerge key value <=< find key $ zipper root
