@@ -123,6 +123,20 @@ spec = do
                  ]
              ]))
 
+      describe "split" $ do
+        it "should split a leaf" $ do
+          let root = leaf (order 3) [('A', 0), ('B', 1), ('C', 2)]
+          split' 'D' 3 root
+            `shouldBe`
+            Just $ node (order 3) (V.singleton 'C') $ V.fromList [leaf (order 3) [('A', 0), ('B', 1)], leaf (order 3) [('C', 2), ('D', 3)]]
+
+      -- describe "insertWithMerge" $ do
+      --   it "should insert the value in an empty root/leaf" $ do
+      --     let root = leaf (order 3) []
+      --     (fmap unzipper <$> insertWithMerge 'A' 0 . zipper $ root)
+      --       `shouldBe`
+      --       (Just $ leaf (order 3) [('A', 0)])
+
     -- describe "insert" $ do
     --   it "should keep a value inserted into an empty root" $ do
     --     let root = leaf (order 3) []

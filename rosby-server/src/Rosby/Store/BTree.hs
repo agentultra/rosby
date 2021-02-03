@@ -2,7 +2,6 @@
 
 module Rosby.Store.BTree where
 
-import Control.Monad
 import Data.List hiding (find)
 import Data.Vector (Vector, (!), (!?), (//))
 import qualified Data.Vector as V
@@ -52,15 +51,35 @@ instance (Ord k, Ord v) => Ord (BTree k v) where
   BNode _ (Node n _) <= BLeaf _ (Leaf l _) = n <= l
   BLeaf _ (Leaf l _) <= BNode _ (Node n _) = l <= n
 
-insertLeaf :: (Ord k, Ord v) => k -> v -> BTree k v -> Maybe (BTree k v)
-insertLeaf k v (BLeaf (Order o) (Leaf ks vs))
+data InsertResult a
+  = Overflow a
+  -- ^ Case where we inserted and the order property is violated
+  | Underflow a
+  -- ^ Case where we have inserted into a Leaf and order property is
+  -- preserved
+  | NoInsert
+  -- ^ Cannot insert into a BNode
+  deriving (Eq, Show)
+
+insertLeaf :: (Ord k, Ord v) => k -> v -> Zipper k v -> InsertResult (BTree k v)
+insertLeaf k v (BLeaf (Order o) (Leaf ks vs), _)
   | V.length ks == V.length vs && V.length ks < o =
-    Just $ leaf (order o) $ V.toList $ insertInto k v (V.zip ks vs)
-  | otherwise = Nothing
+    Underflow $ leaf (order o) $ V.toList $ insertInto k v (V.zip ks vs)
+  | otherwise = Overflow $ splitNode k v ks vs
   where
     insertInto :: (Ord k, Ord v) => k -> v -> Vector (k, v) -> Vector (k, v)
     insertInto k' v' = V.fromList . sort . (:) (k', v') . V.toList
-insertLeaf _ _ _ = Nothing
+    splitNode :: (Ord k, Ord v) => k -> v -> Vector k -> Vector v -> BTree k v
+    splitNode key value keys values =
+      -- TODO: insert key and value into keys and values before splitting them
+      let (leftKeys, rightKeys) = V.partition (< key) keys
+          (leftValues, rightValues) = V.splitAt (V.length leftKeys) values
+          k' = V.head rightKeys
+      in node (order o) (V.singleton k')
+         $ V.fromList [ BLeaf (order o) (Leaf leftKeys leftValues)
+                      , BLeaf (order o) (Leaf rightKeys rightValues)
+                      ]
+insertLeaf _ _ _ = NoInsert
 
 zipper :: (Eq k, Ord k, Show k) => BTree k v -> Zipper k v
 zipper = (, [])
@@ -130,9 +149,19 @@ find key z@(BNode _ (Node keys _), _) = moveDown (search key keys 0 (V.length ke
           GT -> search k ks (mid + 1) hi
           EQ -> mid + 1
 
-insertWithMerge :: (Ord k, Show k) => k -> v -> Zipper k v -> Maybe (Zipper k v)
-insertWithMerge = undefined
+moveToTop :: Zipper k v -> Maybe (Zipper k v)
+moveToTop z = case moveUp z of
+  Nothing -> Just z
+  Just z' -> moveToTop z'
 
--- TODO: We should remove the Maybe
-insert :: (Ord k, Show k) => k -> v -> BTree k v -> Maybe (BTree k v)
-insert key value root = fmap fst <$> insertWithMerge key value <=< find key $ zipper root
+insertWithMerge :: (Ord k, Ord v, Show k) => k -> v -> Zipper k v -> Maybe (Zipper k v)
+insertWithMerge key value z@(_, cs) = do
+  lf <- find key z
+  case insertLeaf key value lf of
+    Overflow bnode -> mergeUp bnode lf
+    Underflow bnode -> moveToTop (bnode, cs)
+    NoInsert -> Nothing -- TODO: maybe error? this would be a malformed tree.
+
+-- -- TODO: We should remove the Maybe
+-- insert :: (Ord k, Show k) => k -> v -> BTree k v -> BTree k v
+-- insert key value root = fmap fst <$> insertWithMerge key value <=< find key $ zipper root
